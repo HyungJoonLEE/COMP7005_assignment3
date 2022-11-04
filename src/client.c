@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
             ssize_t received_data_size;
             if ((received_data_size = read(opts.server_socket, buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
-                printf("[server]: %s",buffer);
+                printf("%s", buffer);
             }
         }
 

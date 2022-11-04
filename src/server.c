@@ -15,8 +15,7 @@
 #include "error.h"
 #include "common.h"
 
-
-const char *CONNECTION_SUCCESS = "Successfully connected to the server\n"; // when client connected server send this
+char client_ip[16];
 
 int main(int argc, char *argv[]) {
     struct options opts;
@@ -24,7 +23,7 @@ int main(int argc, char *argv[]) {
     int client_socket;
     int max_socket_num; // IMPORTANT Don't forget to set +1
     char buffer[256] = {0};
-    char cpy_buffer[256] = {0};
+    char client_msg[256] = {0};
     int client_address_size = sizeof(struct sockaddr_in);
     ssize_t received_data;
     fd_set read_fds; // fd_set chasing reading status
@@ -33,6 +32,7 @@ int main(int argc, char *argv[]) {
     options_init_server(&opts);
     parse_arguments_server(argc, argv, &opts);
     options_process_server(&opts);
+
 
     while (1) {
         FD_ZERO(&read_fds);
@@ -61,22 +61,23 @@ int main(int argc, char *argv[]) {
 
         // Receive packet from client A
         if (FD_ISSET(opts.client_socket[0], &read_fds)) {
-            received_data = read(opts.client_socket[0], buffer, sizeof(buffer));
+            received_data = read(opts.client_socket[0], client_msg, sizeof(client_msg));
             if (received_data <= 0) {
                 remove_client(&opts, 0);
                 continue;
             }
-            buffer[received_data] = '\0';
+            client_msg[received_data] = '\0';
+            sprintf(buffer, "[ %s ]: ", client_ip);
+            strcat(buffer, client_msg);
+            printf("%s", buffer);
 
-            strcpy(cpy_buffer, buffer);
-            for (int i = 0; i < strlen(cpy_buffer); i++) {
-                cpy_buffer[i] = (char) toupper(buffer[i]);
+            for (int i = 0; i < strlen(client_msg); i++) {
+                client_msg[i] = (char) toupper(client_msg[i]);
             }
 
-            printf("cpy_buffer = %s\n", cpy_buffer);
-            write(opts.client_socket[0], cpy_buffer, sizeof(cpy_buffer));
-            memset(cpy_buffer, 0, sizeof(char) * 256);
-            printf("%s", buffer);
+
+            write(opts.client_socket[0], client_msg, sizeof(client_msg));
+            memset(client_msg, 0, sizeof(char) * 256);
         }
     }
     cleanup(&opts);
@@ -166,7 +167,7 @@ void add_new_client(struct options *opts, int client_socket, struct sockaddr_in 
 
     inet_ntop(AF_INET, &new_client_address->sin_addr, buffer, sizeof(buffer));
     printf("New client: [ %s ]\n", buffer);
-
+    strcpy(client_ip, buffer);
     opts->client_socket[opts->client_count] = client_socket;
     opts->client_count++;
 }
@@ -174,10 +175,8 @@ void add_new_client(struct options *opts, int client_socket, struct sockaddr_in 
 
 void remove_client(struct options *opts, int client_socket) {
     close(opts->client_socket[client_socket]);
-
     if (client_socket != opts->client_count - 1)
         opts->client_socket[client_socket] = opts->client_socket[opts->client_count - 1];
-
     opts->client_count--;
     printf("Current client count = %d\n", opts->client_count);
 }
@@ -185,14 +184,12 @@ void remove_client(struct options *opts, int client_socket) {
 // Finding maximum socket number
 int get_max_socket_number(struct options *opts) {
     // Minimum socket number start with server socket(opts->server_socket)
-    int max = opts->server_socket;
-    int i;
+    int max_socket_num = opts->server_socket;
+    for (int i = 0; i < opts->client_count; i++)
+        if (opts->client_socket[i] > max_socket_num)
+            max_socket_num = opts->client_socket[i];
 
-    for (i = 0; i < opts->client_count; i++)
-        if (opts->client_socket[i] > max)
-            max = opts->client_socket[i];
-
-    return max;
+    return max_socket_num;
 }
 
 
