@@ -1,15 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <fcntl.h>
-#include <ctype.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <sys/file.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include "conversion.h"
 #include "server.h"
 #include "error.h"
@@ -27,8 +15,15 @@ int main(int argc, char *argv[]) {
     int client_address_size = sizeof(struct sockaddr_in);
     ssize_t received_data;
     fd_set read_fds; // fd_set chasing reading status
+    SSL_CTX *ctx;
+    SSL *ssl;
 
 
+
+    SSL_library_init();
+    ctx = InitServerCTX();
+    LoadCertificates(ctx, PUBLIC_KEY, PRIVATE_KEY);
+    ShowCerts(ssl);
     options_init_server(&opts);
     parse_arguments_server(argc, argv, &opts);
     options_process_server(&opts);
@@ -195,4 +190,64 @@ int get_max_socket_number(struct options *opts) {
 
 static void cleanup(const struct options *opts) {
     close(opts->server_socket);
+}
+
+
+SSL_CTX* InitServerCTX() {
+    SSL_METHOD *method;
+    SSL_CTX *ctx;
+
+    OpenSSL_add_all_algorithms();  /* load & register all cryptos, etc. */
+    SSL_load_error_strings();   /* load all error messages */
+    method = TLSv1_2_server_method();  /* create new server-method instance */
+    ctx = SSL_CTX_new(method);   /* create new context from method */
+    if ( ctx == NULL )
+    {
+        ERR_print_errors_fp(stderr);
+        abort();
+    }
+    return ctx;
+}
+
+
+void LoadCertificates(SSL_CTX* ctx, char* public_key, char* private_key) {
+    /* set the local certificate from public_key */
+    if ( SSL_CTX_use_certificate_file(ctx, public_key, SSL_FILETYPE_PEM) <= 0 )
+    {
+        ERR_print_errors_fp(stderr);
+        abort();
+    }
+    /* set the private key (maybe the same as public_key) */
+    if ( SSL_CTX_use_PrivateKey_file(ctx, private_key, SSL_FILETYPE_PEM) <= 0 )
+    {
+        ERR_print_errors_fp(stderr);
+        abort();
+    }
+    /* verify private key */
+    if ( !SSL_CTX_check_private_key(ctx) )
+    {
+        fprintf(stderr, "Private key does not match the public certificate\n");
+        abort();
+    }
+}
+
+
+void ShowCerts(SSL* ssl) {
+    X509 *cert;
+    char *line;
+
+    cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
+    if ( cert != NULL )
+    {
+        printf("Server certificates:\n");
+        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+        printf("Subject: %s\n", line);
+        free(line);
+        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+        printf("Issuer: %s\n", line);
+        free(line);
+        X509_free(cert);
+    }
+    else
+        printf("No certificates.\n");
 }

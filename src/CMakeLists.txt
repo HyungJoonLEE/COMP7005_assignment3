@@ -10,7 +10,7 @@ IF (LINT)
 ENDIF ()
 
 # Make an executable
-add_executable(SERVER ${COMMON_SOURCE_LIST}  ${SERVER_SOURCE_LIST} ${SERVER_MAIN_SOURCE} ${HEADER_LIST})
+add_executable(SERVER ${COMMON_SOURCE_LIST} ${SERVER_SOURCE_LIST} ${SERVER_MAIN_SOURCE} ${HEADER_LIST})
 add_executable(CLIENT ${COMMON_SOURCE_LIST} ${CLIENT_MAIN_SOURCE} ${HEADER_LIST})
 
 # We need this directory, and users of our library will need it too
@@ -43,6 +43,7 @@ find_library(LIBSOCKET socket)
 
 target_link_libraries(SERVER PRIVATE ${LIBM})
 target_link_libraries(CLIENT PRIVATE ${LIBM})
+
 
 set_target_properties(SERVER PROPERTIES OUTPUT_NAME "server")
 set_target_properties(CLIENT PROPERTIES OUTPUT_NAME "client")

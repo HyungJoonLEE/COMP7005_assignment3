@@ -1,21 +1,28 @@
 #ifndef COMP_7005_PROJECT_SERVER_H
 #define COMP_7005_PROJECT_SERVER_H
 
-#include <arpa/inet.h>
-#include <assert.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
-#include <unistd.h>
-#include <net/if.h>
-#include <sys/ioctl.h>
+#include <strings.h>
+#include <fcntl.h>
 #include <ctype.h>
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <sys/file.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <openssl/x509.h>
+#include <openssl/pem.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <assert.h>
 
 #define DEFAULT_PORT 4000
+#define PUBLIC_KEY "./../key/cert.pem"
+#define PRIVATE_KEY "./../key.pem"
 #define IP_LEN 16
 
 const char *CONNECTION_SUCCESS = "Successfully connected to the server\n"; // when client connected server send this
@@ -72,5 +79,7 @@ static void cleanup(const struct options *opts);
 void add_new_client(struct options *opts, int client_socket, struct sockaddr_in *newcliaddr);
 int get_max_socket_number(struct options *opts);
 void remove_client(struct options *opts, int client_socket);
-
+SSL_CTX* InitServerCTX(void);
+void LoadCertificates(SSL_CTX* ctx, char* CertFile, char* KeyFile);
+void ShowCerts(SSL* ssl);
 #endif //COMP_7005_PROJECT_SERVER_H

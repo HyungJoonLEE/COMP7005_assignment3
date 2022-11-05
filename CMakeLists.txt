@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 # Project name and a few useful settings. Other commands can pick up the results
-project(COMP7005_assignment4
+project(COMP7005_assignment3
         VERSION 0.1
         DESCRIPTION ""
         LANGUAGES C)
@@ -14,8 +14,6 @@ set(HEADER_LIST
         "${PROJECT_SOURCE_DIR}/include/error.h"
         "${PROJECT_SOURCE_DIR}/include/conversion.h"
         "${PROJECT_SOURCE_DIR}/include/copy.h"
-#        "${PROJECT_SOURCE_DIR}/include/download.h"
-#        "${PROJECT_SOURCE_DIR}/include/send.h"
         "${PROJECT_SOURCE_DIR}/include/client.h"
 
         )
