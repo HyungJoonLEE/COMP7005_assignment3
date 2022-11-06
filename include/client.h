@@ -13,18 +13,20 @@
 #include <unistd.h>
 #include <time.h>
 #include <dirent.h>
+#include <openssl/x509.h>
+#include <openssl/pem.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
 
 
 struct options
 {
-    char *file_name;
     char *ip_out;
     in_port_t port_out;
     int fd_in;
     int fd_out;
     int server_socket;
-    char* file_arr[200];
-    int file_count;
 };
 
 
@@ -65,6 +67,8 @@ static int options_process(struct options *opts);
  * @param opts client option struct settings
  */
 static void cleanup(const struct options *opts);
+SSL_CTX* InitCTX(void);
+void ShowCerts(SSL* ssl);
 
 
 

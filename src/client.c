@@ -9,20 +9,34 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <resolv.h>
+#include <netdb.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 #include "client.h"
 #include "conversion.h"
 #include "error.h"
 
 
+#define FAIL -1
 
 
 int main(int argc, char *argv[]) {
-    int max_socket_num; // IMPORTANT Don't forget to set +1
-    char buffer[255] = {0};
-    fd_set read_fds;
-
-
+    char buffer[256] = {0};
+    int received_bytes;
+    SSL_CTX *ctx;
+    SSL *ssl;
     struct options opts;
+
+
+    SSL_library_init();
+    ctx = InitCTX();
     options_init(&opts);
     parse_arguments(argc, argv, &opts);
     opts.server_socket = options_process(&opts);
@@ -30,32 +44,27 @@ int main(int argc, char *argv[]) {
         printf("Connect() fail");
     }
 
-    max_socket_num = opts.server_socket + 1;
 
-    FD_ZERO(&read_fds);
-    while (1) {
-        FD_SET(0, &read_fds);
-        FD_SET(opts.server_socket, &read_fds);
-        if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {
-            printf("select fail");
-            exit(1);
-        }
-
-        if (FD_ISSET(opts.server_socket, &read_fds)) {
-            ssize_t received_data_size;
-            if ((received_data_size = read(opts.server_socket, buffer, sizeof(buffer))) > 0) {
-                buffer[received_data_size] = '\0';
-                printf("%s", buffer);
+    ssl = SSL_new(ctx);      /* create new SSL connection state */
+    SSL_set_fd(ssl, opts.server_socket);    /* attach the socket descriptor */
+    if (SSL_connect(ssl) == FAIL )   /* perform the connection */
+        ERR_print_errors_fp(stderr);
+    else {
+        printf("Connected with %s encryption\n", SSL_get_cipher(ssl));
+        ShowCerts(ssl);        /* get any certs */
+        if (fgets(buffer, sizeof(buffer), stdin)) {
+            if (SSL_write(ssl, buffer, sizeof(buffer)) < 0) {
+                printf("Nothing to write()\n");
             }
         }
-
-        if (FD_ISSET(0, &read_fds)) {
-            if (fgets(buffer, sizeof(buffer), stdin)) {
-                if (write(opts.server_socket, buffer, sizeof(buffer)) < 0)
-                    printf("Nothing to write()\n");
-            }
-        }
+        memset(buffer, 0, sizeof(char) * 256);
+        received_bytes = SSL_read(ssl, buffer, sizeof(buffer)); /* get reply & decrypt */
+        buffer[received_bytes] = 0;
+        printf("Server: %s\n", buffer);
+        SSL_free(ssl);        /* release connection state */
     }
+    close(opts.server_socket);         /* close socket */
+    SSL_CTX_free(ctx);        /* release context */
     cleanup(&opts);
     return EXIT_SUCCESS;
 }
@@ -111,16 +120,6 @@ static int options_process(struct options *opts) {
     ssize_t server_connection_test_fd;
     int result;
     char message[50] = {0};
-    if(opts->file_name)
-    {
-        opts->fd_in = open(opts->file_name, O_RDONLY);
-
-        if(opts->fd_in == -1)
-        {
-            fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
-        }
-    }
-
 
     if(opts->ip_out)
     {
@@ -148,11 +147,6 @@ static int options_process(struct options *opts) {
         {
             fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
         }
-        server_connection_test_fd = read(opts->server_socket, message, sizeof(message));
-        if(server_connection_test_fd == -1) {
-            printf("You are not connected to server\n");
-        }
-        printf("[ SERVER ]: %s \n", message);
     }
     return opts->server_socket;
 }
@@ -164,8 +158,41 @@ static void cleanup(const struct options *opts)
     {
         close(opts->fd_out);
     }
-    for (int i = 0; i < opts->file_count; i++) {
-        free(opts->file_arr[i]);
-    }
 }
 
+
+SSL_CTX* InitCTX(void)
+{   SSL_METHOD *method;
+    SSL_CTX *ctx;
+
+    OpenSSL_add_all_algorithms();  /* Load cryptos, et.al. */
+    SSL_load_error_strings();   /* Bring in and register error messages */
+    method = TLSv1_2_client_method();  /* Create new client-method instance */
+    ctx = SSL_CTX_new(method);   /* Create new context */
+    if ( ctx == NULL )
+    {
+        ERR_print_errors_fp(stderr);
+        abort();
+    }
+    return ctx;
+}
+
+void ShowCerts(SSL* ssl)
+{   X509 *cert;
+    char *line;
+
+    cert = SSL_get_peer_certificate(ssl); /* get the server's certificate */
+    if ( cert != NULL )
+    {
+        printf("Server certificates:\n");
+        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+        printf("Subject: %s\n", line);
+        free(line);       /* free the malloc'ed string */
+        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+        printf("Issuer: %s\n", line);
+        free(line);       /* free the malloc'ed string */
+        X509_free(cert);     /* free the malloc'ed certificate copy */
+    }
+    else
+        printf("Info: No client certificates configured.\n");
+}

@@ -17,17 +17,18 @@ add_executable(CLIENT ${COMMON_SOURCE_LIST} ${CLIENT_MAIN_SOURCE} ${HEADER_LIST}
 target_include_directories(SERVER PRIVATE ../include)
 target_include_directories(SERVER PRIVATE /usr/include)
 target_include_directories(SERVER PRIVATE /usr/local/include)
-target_include_directories(SERVER PRIVATE /usr/local/include/openssl)
-target_include_directories(SERVER PRIVATE /usr/local/opt/openssl/include/openssl)
 target_link_directories(SERVER PRIVATE /usr/lib)
 target_link_directories(SERVER PRIVATE /usr/local/lib)
 target_link_directories(SERVER PRIVATE /usr/local/opt/openssl/lib)
+target_link_libraries(SERVER PRIVATE ssl crypto)
 target_include_directories(CLIENT PRIVATE ../include)
 target_include_directories(CLIENT PRIVATE /usr/include)
 target_include_directories(CLIENT PRIVATE /usr/local/include)
 target_link_directories(CLIENT PRIVATE /usr/lib)
 target_link_directories(CLIENT PRIVATE /usr/local/lib)
-target_link_libraries(SERVER PRIVATE ssl crypto)
+target_link_directories(CLIENT PRIVATE /usr/local/opt/openssl/lib)
+target_link_libraries(CLIENT PRIVATE ssl crypto)
+
 
 
 # All users of this library will need at least C17
