@@ -26,8 +26,8 @@ struct options
 {
     in_port_t port_in;
     int server_socket;
-    char public_key[20];
-    char private_key[20];
+    char public_key[40];
+    char private_key[40];
 };
 
 
