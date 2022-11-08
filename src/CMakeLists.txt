@@ -10,7 +10,7 @@ IF (LINT)
 ENDIF ()
 
 # Make an executable
-add_executable(SERVER ${COMMON_SOURCE_LIST}  ${SERVER_SOURCE_LIST} ${SERVER_MAIN_SOURCE} ${HEADER_LIST})
+add_executable(SERVER ${COMMON_SOURCE_LIST} ${SERVER_SOURCE_LIST} ${SERVER_MAIN_SOURCE} ${HEADER_LIST})
 add_executable(CLIENT ${COMMON_SOURCE_LIST} ${CLIENT_MAIN_SOURCE} ${HEADER_LIST})
 
 # We need this directory, and users of our library will need it too
@@ -19,11 +19,16 @@ target_include_directories(SERVER PRIVATE /usr/include)
 target_include_directories(SERVER PRIVATE /usr/local/include)
 target_link_directories(SERVER PRIVATE /usr/lib)
 target_link_directories(SERVER PRIVATE /usr/local/lib)
+target_link_directories(SERVER PRIVATE /usr/local/opt/openssl/lib)
+target_link_libraries(SERVER PRIVATE ssl crypto)
 target_include_directories(CLIENT PRIVATE ../include)
 target_include_directories(CLIENT PRIVATE /usr/include)
 target_include_directories(CLIENT PRIVATE /usr/local/include)
 target_link_directories(CLIENT PRIVATE /usr/lib)
 target_link_directories(CLIENT PRIVATE /usr/local/lib)
+target_link_directories(CLIENT PRIVATE /usr/local/opt/openssl/lib)
+target_link_libraries(CLIENT PRIVATE ssl crypto)
+
 
 
 # All users of this library will need at least C17
@@ -43,6 +48,7 @@ find_library(LIBSOCKET socket)
 
 target_link_libraries(SERVER PRIVATE ${LIBM})
 target_link_libraries(CLIENT PRIVATE ${LIBM})
+
 
 set_target_properties(SERVER PROPERTIES OUTPUT_NAME "server")
 set_target_properties(CLIENT PROPERTIES OUTPUT_NAME "client")
