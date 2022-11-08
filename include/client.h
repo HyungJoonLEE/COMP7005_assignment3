@@ -1,7 +1,6 @@
 #ifndef ASSIGNMENT1_CLIENT_H
 #define ASSIGNMENT1_CLIENT_H
 
-#include "common.h"
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>

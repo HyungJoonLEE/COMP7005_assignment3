@@ -22,11 +22,6 @@
 
 #define DEFAULT_PORT 4000
 
-#define IP_LEN 16
-
-const char *CONNECTION_SUCCESS = "Successfully connected to the server\n"; // when client connected server send this
-
-
 struct options
 {
     in_port_t port_in;

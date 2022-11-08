@@ -1,24 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <netinet/in.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <resolv.h>
-#include <netdb.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-
+#include "common.h"
 #include "client.h"
 #include "conversion.h"
 #include "error.h"
