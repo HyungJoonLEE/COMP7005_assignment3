@@ -24,11 +24,9 @@ set(COMMON_SOURCE_LIST
         )
 
 set(SERVER_SOURCE_LIST
-#        "${project_SOURCE_DIR}/src/download.c"
         )
 
 set(CLIENT_SOURCE_LIST
-#        "${PROJECT_SOURCE_DIR}/src/send.c"
         )
 
 set(SERVER_MAIN_SOURCE
