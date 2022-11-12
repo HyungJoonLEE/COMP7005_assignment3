@@ -97,9 +97,7 @@ static void parse_arguments(int argc, char *argv[], struct options *opts)
 
 
 static int options_process(struct options *opts) {
-    ssize_t server_connection_test_fd;
     int result;
-    char message[50] = {0};
 
     if(opts->ip_out)
     {

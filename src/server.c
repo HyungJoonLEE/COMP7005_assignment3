@@ -193,7 +193,6 @@ void Servlet(SSL* ssl, char* client_ip) { /* Serve the connection -- threadable 
     if ( SSL_accept(ssl) == FAIL )     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     else {
-//        ShowCerts(ssl);        /* get any certificates */
         received_bytes = SSL_read(ssl, buffer, sizeof(buffer)); /* get request */
 
         if ( received_bytes > 0 )
