@@ -26,6 +26,7 @@ struct options
     int fd_in;
     int fd_out;
     int server_socket;
+    char file[40];
 };
 
 
@@ -68,6 +69,7 @@ static int options_process(struct options *opts);
 static void cleanup(const struct options *opts);
 SSL_CTX* InitCTX(void);
 void ShowCerts(SSL* ssl);
+int send_file(struct options *opts, SSL* ssl);
 
 
 

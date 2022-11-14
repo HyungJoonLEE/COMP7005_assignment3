@@ -10,6 +10,8 @@
 int main(int argc, char *argv[]) {
     char buffer[256] = {0};
     int received_bytes;
+    int file_size;
+    int current_size = 0;
     SSL_CTX *ctx;
     SSL *ssl;
     struct options opts;
@@ -33,16 +35,27 @@ int main(int argc, char *argv[]) {
         printf("Connected with %s encryption\n", SSL_get_cipher(ssl));
         ShowCerts(ssl);        /* get any certs */
         if (fgets(buffer, sizeof(buffer), stdin)) {
+            if (strstr(buffer, "start") != NULL) {
+                file_size = send_file(&opts, ssl);
+            }
             if (SSL_write(ssl, buffer, sizeof(buffer)) < 0) {
                 printf("Nothing to write()\n");
             }
         }
         memset(buffer, 0, sizeof(char) * 256);
-        received_bytes = SSL_read(ssl, buffer, sizeof(buffer)); /* get reply & decrypt */
-        buffer[received_bytes] = 0;
-        printf("Server: %s\n", buffer);
-        SSL_free(ssl);        /* release connection state */
+        while(1) {
+            received_bytes = SSL_read(ssl, buffer, sizeof(buffer));
+            if (received_bytes > 0) {
+                buffer[received_bytes] = 0;
+                printf("Server: %s\n", buffer);
+                current_size += received_bytes;
+                if (current_size >= file_size) {
+                    break;
+                }
+            }
+        }
     }
+    SSL_free(ssl);
     close(opts.server_socket);         /* close socket */
     SSL_CTX_free(ctx);        /* release context */
     cleanup(&opts);
@@ -92,6 +105,10 @@ static void parse_arguments(int argc, char *argv[], struct options *opts)
                 assert("should not get here");
             };
         }
+    }
+    if(optind < argc) {
+        strcpy(opts->file,  argv[optind + 0]);
+//        printf("%s\n", opts->file);
     }
 }
 
@@ -173,4 +190,37 @@ void ShowCerts(SSL* ssl)
     }
     else
         printf("Info: No client certificates configured.\n");
+}
+
+
+int send_file(struct options *opts, SSL* ssl) {
+    char buffer[256];
+    char response[256];
+
+    // Start to send file(s)
+    FILE *file;
+    ssize_t file_size, current_size = 0;
+
+    // Send server - file size of <filename>.txt
+    file = fopen(opts->file, "rb");
+    fseek(file, 0, SEEK_END);
+    file_size = (int) ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+
+    // Send proxy - read <filename>.txt with 256 bytes and send buffer
+    while(current_size != file_size) {
+        size_t fp_size = fread(buffer, 1, 256, file);
+        buffer[fp_size] = '\0';
+        current_size += fp_size;
+
+        SSL_write(ssl, buffer, sizeof(buffer));
+        memset(buffer, 0, sizeof(char) * 256);
+        if (current_size == file_size) {
+            break;
+        }
+
+    }
+    fclose(file);
+    return file_size;
 }

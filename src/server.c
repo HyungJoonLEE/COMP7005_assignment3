@@ -193,20 +193,23 @@ void Servlet(SSL* ssl, char* client_ip) { /* Serve the connection -- threadable 
     if ( SSL_accept(ssl) == FAIL )     /* do SSL-protocol accept */
         ERR_print_errors_fp(stderr);
     else {
-        received_bytes = SSL_read(ssl, buffer, sizeof(buffer)); /* get request */
+        while(1) {
+            received_bytes = SSL_read(ssl, buffer, sizeof(buffer)); /*   */
+            if (received_bytes > 0) {
+                buffer[received_bytes] = 0;
+                printf("%s: %s\n", client_ip, buffer);
 
-        if ( received_bytes > 0 )
-        {
-            buffer[received_bytes] = 0;
-            printf("%s: %s\n", client_ip, buffer);
-
-            for (int i = 0; i < (int)strlen(buffer); i++) {
-                buffer[i] = (char)toupper(buffer[i]);
+                for (int i = 0; i < (int) strlen(buffer); i++) {
+                    buffer[i] = (char) toupper(buffer[i]);
+                }
+                SSL_write(ssl, buffer, sizeof(buffer)); /* send reply */
+                memset(buffer, 0, sizeof(char) * 256);
             }
-            SSL_write(ssl, buffer, strlen(buffer)); /* send reply */
+            else {
+                ERR_print_errors_fp(stderr);
+                break;
+            }
         }
-        else
-            ERR_print_errors_fp(stderr);
     }
     sd = SSL_get_fd(ssl);       /* get socket connection */
     SSL_free(ssl);         /* release SSL state */
