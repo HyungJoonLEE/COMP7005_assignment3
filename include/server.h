@@ -67,8 +67,39 @@ static void options_process_server(struct options *opts);
  * @param opts
  */
 static void cleanup(const struct options *opts);
+
+
+/**
+ * OpenSSL keeps an internal table of digest algorithms and ciphers. It uses this table to lookup ciphers via functions
+ *
+ * @return SSL_CTX
+ */
 SSL_CTX* InitServerCTX(void);
+
+
+/**
+ * set the local certificate from public_key and private key and verify private key
+ *
+ * @param ctx SSL_CTX
+ * @param CertFile public key as a string
+ * @param KeyFile private key as a string
+ */
 void LoadCertificates(SSL_CTX* ctx, char* CertFile, char* KeyFile);
+
+
+/**
+ * Get certificates (if available) other than that print no certificates
+ *
+ * @param ssl SSL struct
+ */
 void ShowCerts(SSL* ssl);
+
+
+/**
+ * Serve the SSL connection and SSL_read and SSL_write for the packet
+ *
+ * @param ssl SSL struct
+ * @param client_ip ip of connected client
+ */
 void Servlet(SSL* ssl, char* client_ip);
 #endif //COMP_7005_PROJECT_SERVER_H

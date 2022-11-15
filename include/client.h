@@ -67,8 +67,31 @@ static int options_process(struct options *opts);
  * @param opts client option struct settings
  */
 static void cleanup(const struct options *opts);
+
+
+/**
+ * OpenSSL keeps an internal table of digest algorithms and ciphers. It uses this table to lookup ciphers via functions
+ *
+ * @return SSL_CTX
+ */
 SSL_CTX* InitCTX(void);
+
+
+/**
+ * Get certificates (if available) other than that print no certificates
+ *
+ * @param ssl SSL struct
+ */
 void ShowCerts(SSL* ssl);
+
+
+/**
+ * Send a file using SSL_write and return file size
+ *
+ * @param opts client struct
+ * @param ssl SSL struct
+ * @return size of file
+ */
 int send_file(struct options *opts, SSL* ssl);
 
 
